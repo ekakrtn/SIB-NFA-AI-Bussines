@@ -1,0 +1,388 @@
+{
+  "name": "Tugas-5",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFile",
+        "fileToWatch": {
+          "__rl": true,
+          "value": "1YikO5ewVTxVDDaIJn6FTwLHLd3dykcMrDwTSK5QWJlY",
+          "mode": "list",
+          "cachedResultName": "Salinan dari Panduan Penulisan Ilmiah Tugas Akhir Skripsi",
+          "cachedResultUrl": "https://docs.google.com/document/d/1YikO5ewVTxVDDaIJn6FTwLHLd3dykcMrDwTSK5QWJlY/edit?usp=drivesdk"
+        }
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        400,
+        16
+      ],
+      "id": "87944a3e-bf55-48be-a16d-f0904d860b67",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "8WS4hwg2EoXLG39M",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1YikO5ewVTxVDDaIJn6FTwLHLd3dykcMrDwTSK5QWJlY",
+          "mode": "list",
+          "cachedResultName": "Salinan dari Panduan Penulisan Ilmiah Tugas Akhir Skripsi",
+          "cachedResultUrl": "https://docs.google.com/document/d/1YikO5ewVTxVDDaIJn6FTwLHLd3dykcMrDwTSK5QWJlY/edit?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1008,
+        16
+      ],
+      "id": "9a4bc161-9749-4c2f-91fc-e574972f6224",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "8WS4hwg2EoXLG39M",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1168,
+        16
+      ],
+      "id": "2f8ce704-db16-4762-a29f-2b827073af32",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        832,
+        848
+      ],
+      "id": "27a66f4d-ac0f-48d2-9d17-f54d06386490",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "EZK7ZJ8GPUWuk7pX",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7a9fc0b6-4270-4878-96f5-cf0647d83f79",
+              "name": "text",
+              "value": "={{$json[\"text\"] ? $json[\"text\"].replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, \"\").replace(/\\\\u[\\dA-F]{4}/gi, \"\") : \"\"}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        592,
+        16
+      ],
+      "id": "ee7d60df-dfa8-44c3-8ebe-6f55eabca6c8",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $json.text || \"\";\n\nreturn {\n  json: {\n    ...$json,\n    text: text\n      .replace(/[\\u0000-\\u001F\\u007F-\\u009F]/g, \"\")\n      .replace(/\\\\u[\\dA-F]{4}/gi, \"\")\n      .replace(/[^\\x00-\\x7F]/g, \"\")\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        816,
+        16
+      ],
+      "id": "cf10cbff-442a-43eb-bbdf-87c27452b622",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Kamu adalah asisten AI yang membantu mahasiswa dalam memahami dan menyusun penulisan ilmiah seperti tugas akhir atau skripsi.\nGunakan tool \"simple vectore store\" untuk mengambil informasi yang relevan dari data yang tersedia.\nPrioritaskan jawaban berdasarkan data dalam vector store. Jangan membuat jawaban sendiri di luar data tersebut.\nJika informasi tidak ditemukan, jawab dengan: \"Maaf, saya belum menemukan informasi yang relevan dalam database yang tersedia.\"\nJawaban harus jelas, informatif, dan sesuai dengan konteks akademik.\n\nJika kamu perlu mencari data dari memori skripsi, gunakan tool yang tersedia dan pastikan kamu mengirimkan input dalam format objek yang benar."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        944,
+        592
+      ],
+      "id": "5aae864c-d850-4a4a-a5bf-7c5d0ef82b23",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1024,
+        864
+      ],
+      "id": "952df33d-cf56-4750-ae51-091cf0e2e2af",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Hi there! 👋",
+        "availableInChat": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        688,
+        592
+      ],
+      "id": "a59bbe76-bd17-485e-b031-b65e7d7052cd",
+      "name": "When chat message received",
+      "webhookId": "ca7badb2-d6cc-4517-b752-86d7a1553757"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        1376,
+        16
+      ],
+      "id": "047534d3-7c28-49c8-b765-6f24a601f010",
+      "name": "Simple Vector Store"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-001"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        224
+      ],
+      "id": "409f4760-ba9f-4cd5-a26f-9203ee4c3964",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "EZK7ZJ8GPUWuk7pX",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1520,
+        224
+      ],
+      "id": "c4a04e98-0f33-402c-9131-5b5213bb09ec",
+      "name": "Default Data Loader2"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Gunakan tool ini untuk mencari informasi spesifik tentang aturan, format, dan panduan penulisan skripsi.",
+        "memoryKey": {
+          "__rl": true,
+          "value": "vector_store_key",
+          "mode": "list",
+          "cachedResultName": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        1248,
+        624
+      ],
+      "id": "d0dc6cad-01f6-43ea-bd95-2c665ad559e8",
+      "name": "Simple Vector Store1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Simple Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader2": {
+      "ai_document": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Vector Store1": {
+      "ai_tool": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ba6f7856-d4d2-4fcb-ac11-eec239d2b6b9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "db545c0564e45f3785ff35c9d6dc57244db190200bb7e9afa97a610329fecda7"
+  },
+  "id": "ivZHP5UUeaAJc3NI",
+  "tags": []
+}
